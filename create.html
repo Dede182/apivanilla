@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href = "node_modules/bootstrap/dist/css/bootstrap.min.css" rel = "stylesheet">
+    <link href = "node_modules/bootstrap-icons/font/bootstrap-icons.css" rel = "stylesheet">
+    
+</head>
+
+<body>
+  
+
+    <div class="container py-4">
+        <div class="row">
+            <div class="">
+                <form id = "create">
+                    <div class="form-group">
+                        <label for="name">Product name</label>
+                        <input type="text" id = "name" class="form-control" name = "name" placeholder = "product">
+                      </div>
+                      <div class="form-group">
+                        <label for="price">Product price</label>
+                        <input type="number" id = "price" class="form-control" name = "price" placeholder="price">
+                      </div>
+                      <div class="form-group">
+                        <label for="stock">Product stock</label>
+                        <input type="number" id = "stock" class="form-control" name = "stock" placeholder="stock">
+                      </div>
+                      <div class="form-group">
+                        <label for="photo">Photo</label>
+                        <input type="file" id = "photo" class="form-control" name = "photos[]" multiple>
+                      </div>
+                      <button  type="submit" class="btn btn-primary mt-3">Submit</button>
+                </form>
+            </div>
+            <div class="col-12 mt-5">
+                <table class="table ">
+                    <thead class="thead-dark">
+                      <tr class="text-center">
+                        <th scope="col">#</th>
+                        <th scope="col">Product name</th>
+                        <th scope="col">Price</th>
+                        <th scope="col">Stock</th>
+                        <th scope="col">Contorl</th>
+                      </tr>
+                    </thead>
+                    <tbody id = "tdata" class = "tdata">
+
+                    </tbody>
+                  </table>
+            </div>
+            <div class="d-flex justify-content-between">
+              
+                    <div class=""></div>
+                    <div class="">
+                        <button id = "logout" class = "btn btn-secondary">Logout</button>
+                    </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src = "node_modules/js-cookie/dist/js.cookie.min.js"></script>
+    <script>
+
+        if(!Cookies.get('token')){
+            location.href = "index.html";
+        }
+
+        let tabledata = document.getElementById('tdata');
+       
+        let host = "http://127.0.0.1:8000/";
+        let headers = new Headers();
+            headers.append("Authorization", "Bearer " +Cookies.get("token"));
+            
+        // logout
+        let logout = document.getElementById('logout');
+        let logouturl = host + "api/v1/logout";
+        logout.addEventListener('click',function(){
+            fetch(logouturl,{
+                method : "post",
+                headers
+            }).then(
+                res =>{
+                    if(res.status === 204){
+                        Cookies.remove('token');
+                       
+                    }
+                     location.href = "index.html"
+                }
+            )
+        })
+
+
+
+        //product list
+        let list = host + "api/v1/products";
+        fetch(list,{
+            method:"GET",
+            headers
+        }).then(res => res.json())
+        .then(json =>{
+            console.log(json);
+            let tr = '';
+            if(json.data.length){
+                json.data.forEach(current=>{
+                     tr  += `
+                     <tr class = "text-center px-3 productList" id = "hi" data-id = "${current.id}">
+                    <td>${current.id}</td>
+                    <td>${current.name}</td>
+                    <td>${current.price}</td>
+                    <td>${current.stock}</td>
+                    <td class = "pl" id = "pl">
+                        <button class = "btn btn-secondary btn-sm" id = "info-btn"><i class = "bi bi-info"></i></button>
+                        <button class = "btn btn-secondary btn-sm"><i class = "bi bi-pencil"></i></button>
+                         <button class = "btn btn-secondary btn-sm" id = "delete-btn"><i class = "bi bi-trash"></i></button>
+                    </td>
+                    <tr>
+                    `;
+                    tabledata.innerHTML = tr;
+                })
+            }
+            let Url = host + "api/v1/products/"
+
+            let pl = document.querySelector('.tdata');
+            pl.addEventListener('click',function(e){
+                e.preventDefault();
+
+                let DeleteBtn = e.target.id == "delete-btn";
+                let infoBtn = e.target.id == "info-btn";
+                if(infoBtn){
+                    let id = e.target.parentElement.parentElement.dataset.id; 
+                    console.log(Url + id)
+                    fetch(Url+id,{
+                        method:'get',
+                        headers
+                    }).then(
+                        res=>{
+                            console.log('you can go')
+                        }
+                    )
+                    .catch(error => {
+                        console.log(error)
+                    })
+                }
+                if(DeleteBtn){
+                    let id = e.target.parentElement.parentElement.dataset.id;
+                    console.log(Url+id)
+                    // axios.delete(Url+id)
+                    // .then(res => {
+                    //    console.log(res) 
+                    // })
+                    // .catch(console.log('fail'))
+                    fetch(Url + id,{
+                        method:'DELETE',
+                        headers,
+                        body:id
+                    }).then(res=>{
+                        console.log(res)
+                    })
+                    .catch(
+                       error => console.log(error)
+                    )
+                    
+                }
+            })
+        })
+        // create product
+        let storeUrl = host + "api/v1/products";
+        let storeForm = document.getElementById('create');
+        storeForm.addEventListener('submit',function(e){
+            e.preventDefault();
+            let formData = new FormData(this);
+            fetch(storeUrl,{
+                method: "POST",
+                headers,
+                body:formData
+            })
+            .then(res => res.json())
+            .then(json => {
+                console.log(json);
+                storeForm.reset();
+                location.reload();
+            })
+        })
+       
+        // tdata delete
+        
+    </script>
+    <script src = "node_modules/axios/dist/axios.min.js"></script>
+    <script src = "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
